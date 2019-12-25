@@ -1,0 +1,54 @@
+{
+	"name": "webling-duplicate-manager",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"serve": "vue-cli-service serve",
+		"build": "vue-cli-service build",
+		"lint": "vue-cli-service lint"
+	},
+	"dependencies": {
+		"@vue/composition-api": "^0.3.4",
+		"buefy": "^0.8.8",
+		"core-js": "^3.4.3",
+		"vue": "^2.6.10"
+	},
+	"devDependencies": {
+		"@vue/cli-plugin-babel": "^4.1.0",
+		"@vue/cli-plugin-eslint": "^4.1.0",
+		"@vue/cli-plugin-typescript": "^4.1.0",
+		"@vue/cli-service": "^4.1.0",
+		"@vue/eslint-config-standard": "^4.0.0",
+		"@vue/eslint-config-typescript": "^4.0.0",
+		"eslint": "^5.16.0",
+		"eslint-plugin-vue": "^5.0.0",
+		"typescript": "~3.5.3",
+		"vue-cli-plugin-buefy": "^0.3.7",
+		"vue-template-compiler": "^2.6.10"
+	},
+	"eslintConfig": {
+		"root": true,
+		"env": {
+			"node": true
+		},
+		"extends": [
+			"plugin:vue/strongly-recommended",
+			"@vue/standard",
+			"@vue/typescript"
+		],
+		"parserOptions": {
+			"parser": "@typescript-eslint/parser"
+		},
+		"rules": {
+			"indent": ["error", "tab"],
+			"no-tabs": ["error", { "allowIndentationTabs": true }],
+			"semi": ["error", "always"],
+			"vue/html-indent": ["error", "tab"],
+			"vue/max-attributes-per-line": ["error", { "singleline": 5, "multiline": 1 }]
+		}
+	},
+	"browserslist": [
+		"> 1%",
+		"last 2 versions"
+	]
+}
