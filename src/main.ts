@@ -1,9 +1,15 @@
 import Vue from 'vue';
+
 import VueCompositionApi from '@vue/composition-api';
 
-import App from './App.vue';
+import Buefy from 'buefy';
+import 'buefy/dist/buefy.css';
+import '@fortawesome/fontawesome-free/css/all.css';
+
+import App from '@/components/App.vue';
 
 Vue.use(VueCompositionApi);
+Vue.use(Buefy);
 
 Vue.config.productionTip = false;
 
