@@ -33,16 +33,19 @@
 <script lang="ts">
 import { createComponent } from '@vue/composition-api';
 import { useStore } from '@/lib/store';
+import { useHttp } from '@/lib/http';
 
 export default createComponent({
 	setup() {
-		const { state, domain, apikey, persistent } = useStore();
+		const { domain, apikey, get } = useHttp();
+		const { state, persistent } = useStore();
 		return {
 			domain,
 			apikey,
 			persistent,
-			submit: () => {
+			submit: async () => {
 				if (domain.value.length > 0 && apikey.value.length === 32) {
+					console.log(await get('config'));
 					state.value = 'authorizing';
 				}
 			}

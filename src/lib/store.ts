@@ -2,8 +2,6 @@ import { provide, inject, toRefs, reactive, Ref, InjectionKey } from '@vue/compo
 
 class Store {
 	state: 'initialized' | 'authorizing' | 'fetching' | 'prepare' = 'initialized';
-	domain: string = '';
-	apikey: string = '';
 	persistent: boolean = false
 }
 

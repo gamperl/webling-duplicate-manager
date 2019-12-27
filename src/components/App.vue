@@ -7,13 +7,15 @@
 import { createComponent, watch } from '@vue/composition-api';
 import Login from '@/components/Login.vue';
 import { provideStore } from '@/lib/store';
+import { provideHttp } from '@/lib/http';
 
 export default createComponent({
 	components: {
 		Login
 	},
 	setup() {
-		const { state, apikey, domain, persistent } = provideStore();
+		const { apikey, domain } = provideHttp();
+		const { state, persistent } = provideStore();
 		watch(state, () => {
 			console.log(state.value, apikey.value, domain.value, persistent.value);
 		});
