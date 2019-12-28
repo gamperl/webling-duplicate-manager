@@ -33,18 +33,20 @@
 
 <script lang="ts">
 import { createComponent, ref } from '@vue/composition-api';
-import { useStore } from '@/lib/store';
 import { useHttp } from '@/lib/http';
+import { useStorage } from '@/lib/storage';
+import { useDefinitionss } from '@/lib/definitions';
 
 export default createComponent({
 	setup() {
-		const { domain, apikey, get } = useHttp();
-		const { state, persistent } = useStore();
+		const { domain, apikey } = useHttp();
+		const { persistent, get, set } = useStorage();
+		const { fetch } = useDefinitionss();
 		const isLoading = ref(false);
 		const isError = ref(false);
 
-		domain.value = localStorage.getItem('domain') || '';
-		apikey.value = localStorage.getItem('apikey') || '';
+		domain.value = get('domain', '');
+		apikey.value = get('apikey', '');
 		persistent.value = domain.value.length > 0 || apikey.value.length > 0;
 
 		return {
@@ -57,16 +59,10 @@ export default createComponent({
 				if (domain.value.length > 0 && apikey.value.length === 32) {
 					isLoading.value = true;
 					try {
-						await get('config');
+						await fetch('member');
 						isError.value = false;
-						if (persistent.value) {
-							localStorage.setItem('domain', domain.value);
-							localStorage.setItem('apikey', apikey.value);
-						} else {
-							localStorage.removeItem('domain');
-							localStorage.removeItem('apikey');
-						}
-						state.value = 'authorizing';
+						set('domain', domain);
+						set('apikey', apikey);
 					} catch (e) {
 						isLoading.value = false;
 						isError.value = true;

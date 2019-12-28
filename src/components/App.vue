@@ -1,26 +1,30 @@
 <template>
-	<Login v-if="state === 'initialized'" />
-	<div v-else>Loged in ...</div>
+	<Definition v-if="hasMemberDefinition" />
+	<Login v-else />
 </template>
 
 <script lang="ts">
-import { createComponent, watch } from '@vue/composition-api';
+import { computed, createComponent } from '@vue/composition-api';
 import Login from '@/components/Login.vue';
-import { provideStore } from '@/lib/store';
+import Definition from '@/components/Definition.vue';
 import { provideHttp } from '@/lib/http';
+import { provideDefinitionss } from '@/lib/definitions';
+import { provideStorage } from '@/lib/storage';
 
 export default createComponent({
 	components: {
-		Login
+		Login,
+		Definition
 	},
 	setup() {
-		const { apikey, domain } = provideHttp();
-		const { state, persistent } = provideStore();
-		watch(state, () => {
-			console.log(state.value, apikey.value, domain.value, persistent.value);
-		});
+		const http = provideHttp();
+		const { get } = provideDefinitionss(http);
+		provideStorage();
+
+		const hasMemberDefinition = computed(() => get('member').ready);
+
 		return {
-			state
+			hasMemberDefinition
 		};
 	}
 });

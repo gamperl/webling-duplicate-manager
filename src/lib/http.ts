@@ -120,27 +120,19 @@ async function send(domain: string, relativeUrl: string, method: string, apikey:
 	}
 }
 
-class Http {
-	domain: Ref<string>;
-	apikey: Ref<string>;
-	get: (url: string) => Promise<unknown>;
-	post: (url: string, data: any) => Promise<unknown>;
-	put: (url: string, data: any) => Promise<unknown>;
-	delete: (url: string) => Promise<unknown>;
+export class Http {
+	public readonly domain: Ref<string>;
+	public readonly apikey: Ref<string>;
+	public readonly get: (url: string) => Promise<any>;
+	public readonly post: (url: string, data: any) => Promise<any>;
+	public readonly put: (url: string, data: any) => Promise<any>;
+	public readonly delete: (url: string) => Promise<any>;
 	constructor() {
 		this.domain = ref('');
 		this.apikey = ref('');
-
-		// Send a GET request to the rest API. A GET request sould be used to fetch data
 		this.get = async url => send(this.domain.value, url, 'GET', this.apikey.value);
-
-		// Send a POST request to the rest API. A POST request sould be used to create data
 		this.post = async (url, data = null) => send(this.domain.value, url, 'POST', this.apikey.value, data);
-
-		// Send a PUT request to the rest API. A PUT request should be used to change data.
 		this.put = async (url, data = null) => send(this.domain.value, url, 'PUT', this.apikey.value, data);
-
-		// Send a DELETE request to the rest API. A DELETE should be used to delete data
 		this.delete = async url => send(this.domain.value, url, 'DELETE', this.apikey.value);
 	}
 }
