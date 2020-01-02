@@ -1,5 +1,4 @@
 import { inject, InjectionKey, provide, reactive } from '@vue/composition-api';
-import { Http } from '@/lib/http';
 
 export interface IDefinition {
 	ready: boolean;
@@ -28,70 +27,77 @@ export interface IDefinition {
 	}[];
 }
 
-interface IDefinitionCache {
-	[datatype: string]: IDefinition
-}
+export class Definitions {
+	public readonly hasDefinition: (datatype: string) => boolean;
+	public readonly fetchDefinition: (datatype: string) => Promise<IDefinition>;
+	public readonly getDefinition: (datatype: string) => IDefinition;
 
-function initialize(definitions: IDefinitionCache, datatype: string): void {
-	if (!definitions.hasOwnProperty(datatype)) {
-		definitions[datatype] = reactive({
-			ready: false,
-			loaded: null,
-			children: [],
-			label: [],
-			links: {},
-			ordered: false,
-			parents: null,
-			categories: [],
-			properties: []
+	private readonly definitionCache: { [datatype: string]: IDefinition } = {};
+
+	constructor(getRequest: (url: string) => Promise<any>) {
+		this.hasDefinition = datatype => this.hasDefinitionImpl(datatype);
+		this.fetchDefinition = async datatype => this.fetchDefinitionImpl(datatype, getRequest);
+		this.getDefinition = datatype => this.getDefinitionImpl(datatype);
+	}
+
+	private hasDefinitionImpl(datatype: string): boolean {
+		this.initialize(datatype);
+		return this.definitionCache[datatype].ready;
+	}
+
+	private async fetchDefinitionImpl(datatype: string, getRequest: (url: string) => Promise<any>): Promise<IDefinition> {
+		if (!this.hasDefinitionImpl(datatype)) {
+			if (this.definitionCache[datatype].loaded === null) {
+				this.load(datatype, getRequest);
+			}
+			await this.definitionCache[datatype].loaded;
+		}
+		return this.definitionCache[datatype];
+	}
+
+	private getDefinitionImpl(datatype: string): IDefinition {
+		this.initialize(datatype);
+		return this.definitionCache[datatype];
+	}
+
+	private load(datatype: string, getRequest: (url: string) => Promise<any>): void {
+		this.definitionCache[datatype].loaded = getRequest(`definition/${datatype}`).then((definition: IDefinition) => {
+			(<(keyof IDefinition)[]>Object.keys(definition)).forEach(key => {
+				if (this.definitionCache[datatype].hasOwnProperty(key) && definition.hasOwnProperty(key)) {
+					// @ts-ignore
+					this.definitionCache[datatype][key] = definition[key];
+				}
+			});
+			this.definitionCache[datatype].ready = true;
 		});
 	}
-}
 
-export class Definitions {
-	public readonly fetch: (datatype: string) => Promise<IDefinition>;
-	public readonly has: (datatype: string) => boolean;
-	public readonly get: (datatype: string) => IDefinition;
-	constructor(http: Http) {
-		const definitionCache: { [datatype: string]: IDefinition } = {};
-		this.has = (datatype: string): boolean => {
-			initialize(definitionCache, datatype);
-			return definitionCache[datatype].ready;
-		};
-		this.fetch = async datatype => {
-			initialize(definitionCache, datatype);
-			if (!definitionCache[datatype].ready) {
-				if (definitionCache[datatype].loaded === null) {
-					definitionCache[datatype].loaded = http.get(`definition/${datatype}`).then((definition: IDefinition) => {
-						(<(keyof IDefinition)[]>Object.keys(definition)).forEach(key => {
-							if (definitionCache[datatype].hasOwnProperty(key) && definition.hasOwnProperty(key)) {
-								// @ts-ignore
-								definitionCache[datatype][key] = definition[key];
-							}
-						});
-						definitionCache[datatype].ready = true;
-					});
-				}
-				await definitionCache[datatype].loaded;
-			}
-			return definitionCache[datatype];
-		};
-		this.get = datatype => {
-			initialize(definitionCache, datatype);
-			return definitionCache[datatype];
-		};
+	private initialize(datatype: string): void {
+		if (!this.definitionCache.hasOwnProperty(datatype)) {
+			this.definitionCache[datatype] = reactive({
+				ready: false,
+				loaded: null,
+				children: [],
+				label: [],
+				links: {},
+				ordered: false,
+				parents: null,
+				categories: [],
+				properties: []
+			});
+		}
 	}
 }
 
 const DefinitionsKey: InjectionKey<Definitions> = Symbol('DefinitionsKey');
 
-export function provideDefinitionss(http: Http) {
-	const definitions = new Definitions(http);
+export function provideDefinitions(getRequest: (url: string) => Promise<any>) {
+	const definitions = new Definitions(getRequest);
 	provide(DefinitionsKey, definitions);
 	return definitions;
 }
 
-export function useDefinitionss() {
+export function useDefinitions() {
 	const definitions = inject(DefinitionsKey, null);
 	if (definitions === null) {
 		throw new Error('Definitions are not available');

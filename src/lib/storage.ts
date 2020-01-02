@@ -2,27 +2,31 @@ import { inject, InjectionKey, isRef, provide, ref, Ref } from '@vue/composition
 
 export class Storage {
 	public readonly persistent: Ref<boolean>;
-	public readonly get: (key: string, defaultValue: any) => any;
-	public readonly set: (key: string, value: any) => void;
+	public readonly getItem: (key: string, defaultValue: any) => any;
+	public readonly setItem: (key: string, value: any) => void;
 	constructor() {
 		this.persistent = ref(false);
-		this.get = (key, defaultValue) => {
-			const value = localStorage.getItem(key);
-			if (typeof value === 'string') {
-				try {
-					return JSON.parse(value);
-				} catch (e) {}
-			}
-			return isRef(defaultValue) ? defaultValue.value : defaultValue;
-		};
-		this.set = (key, value) => {
-			if (this.persistent.value) {
-				localStorage.setItem(key, JSON.stringify(isRef(value) ? value.value : value));
-			} else {
-				localStorage.removeItem(key);
-			}
-		};
+		this.getItem = (key, defaultValue) => this.getItemImpl(key, defaultValue);
+		this.setItem = (key: string, value: any) => this.setItemImpl(key, value);
 	}
+
+	private getItemImpl(key: string, defaultValue: any): any {
+		const value = localStorage.getItem(key);
+		if (typeof value === 'string') {
+			try {
+				return JSON.parse(value);
+			} catch (e) {}
+		}
+		return isRef(defaultValue) ? defaultValue.value : defaultValue;
+	};
+
+	private setItemImpl(key: string, value: any): void {
+		if (this.persistent.value) {
+			localStorage.setItem(key, JSON.stringify(isRef(value) ? value.value : value));
+		} else {
+			localStorage.removeItem(key);
+		}
+	};
 }
 
 const StorageKey: InjectionKey<Storage> = Symbol('StorageKey');

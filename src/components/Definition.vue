@@ -21,7 +21,7 @@
 									<template slot-scope="props">{{ props.option.title }}</template>
 								</b-taginput>
 							</b-field>
-							<b-button type="is-primary" @click="submit">Weiter</b-button>
+							<b-button type="is-primary" @click="submit" :disabled="isLoading">Weiter</b-button>
 						</div>
 					</div>
 				</div>
@@ -32,15 +32,20 @@
 
 <script lang="ts">
 import { createComponent, ref } from '@vue/composition-api';
-import { useDefinitionss } from '@/lib/definitions';
+import { useDefinitions } from '@/lib/definitions';
+import { useAggregator } from '@/lib/aggregator';
+import { useHttp } from '@/lib/http';
 
 export default createComponent({
 	setup() {
-		const { get } = useDefinitionss();
+		const { getRequest } = useHttp();
+		const { getDefinition } = useDefinitions();
+		const { aggregate } = useAggregator();
 
-		const definitions = get('member');
+		const definitions = getDefinition('member');
 		const comparable = ref<typeof definitions.properties>([]);
 		const filteredProperties = ref<any>(definitions.properties);
+		const isLoading = ref(false);
 
 		// TODO: save comparable in storage
 		// TODO: if no comparable provided, use first and lastname
@@ -53,7 +58,13 @@ export default createComponent({
 					property => property.title.toLowerCase().indexOf(value.toLowerCase()) > -1
 				);
 			},
-			submit: () => console.log(comparable.value)
+			isLoading,
+			submit: async () => {
+				isLoading.value = true;
+				const propertyIds = comparable.value.map(property => property.id);
+				const response = await getRequest('member');
+				await aggregate(response.objects, 'member', propertyIds);
+			}
 		};
 	}
 });
