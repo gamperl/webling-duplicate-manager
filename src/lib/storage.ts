@@ -4,10 +4,12 @@ export class Storage {
 	public readonly persistent: Ref<boolean>;
 	public readonly getItem: (key: string, defaultValue: any) => any;
 	public readonly setItem: (key: string, value: any) => void;
+	public readonly clearItems: () => void;
 	constructor() {
 		this.persistent = ref(false);
 		this.getItem = (key, defaultValue) => this.getItemImpl(key, defaultValue);
-		this.setItem = (key: string, value: any) => this.setItemImpl(key, value);
+		this.setItem = (key, value) => this.setItemImpl(key, value);
+		this.clearItems = () => this.clearItemsImpl();
 	}
 
 	private getItemImpl(key: string, defaultValue: any): any {
@@ -24,6 +26,13 @@ export class Storage {
 		if (this.persistent.value) {
 			localStorage.setItem(key, JSON.stringify(isRef(value) ? value.value : value));
 		} else {
+			localStorage.removeItem(key);
+		}
+	};
+
+	private clearItemsImpl(): void {
+		for (let index: number = 0; index < localStorage.length; index += 1) {
+			const key: string = localStorage.key(index)!;
 			localStorage.removeItem(key);
 		}
 	};

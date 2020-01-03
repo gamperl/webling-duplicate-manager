@@ -17,7 +17,16 @@
 								</div>
 							</b-field>
 							<b-field label="API Key">
-								<b-input v-model="apikey" validation-message="Ein API Key hat 32 Zeichen" minlength="32" maxlength="32" :has-counter="false" required />
+								<div class="field has-addons">
+									<b-input v-model="apikey" validation-message="Ein API Key hat 32 Zeichen" minlength="32" maxlength="32" :has-counter="false" expanded required />
+									<p class="control">
+										<span class="button">
+											<a href="https://support.webling.ch/hc/de/articles/204502429-API-Keys" target="_blank" @click.stop>
+												<b-icon pack="fa" icon="question-circle" />
+											</a>
+										</span>
+									</p>
+								</div>
 							</b-field>
 							<b-field>
 								<b-checkbox v-model="persistent">Auf diesem Computer merken</b-checkbox>
