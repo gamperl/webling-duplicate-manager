@@ -1,7 +1,9 @@
 <template>
 	<span>
-		<a v-if="href !== null" :href="href" target="_blank">{{ label }}</a>
-		<span v-else>{{ label }}</span>
+		{{ label }}
+		<a v-if="href !== null" :href="href" target="_blank" class="is-size-7">
+			<b-icon pack="fa" icon="external-link-alt" />
+		</a>
 	</span>
 </template>
 

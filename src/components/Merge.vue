@@ -25,6 +25,9 @@
 
 		<section class="section">
 			<div class="container">
+				<b-message v-if="error !== null" type="is-danger">
+					{{ mergeError }}
+				</b-message>
 				<b-table
 					:data="rows"
 					:bordered="true"
@@ -41,8 +44,9 @@
 							:class="{ 'is-size-7': props.row.disabled }"
 						>
 							<template slot="header" slot-scope="{ column }">
-								<a :href="'https://' + domain + '.webling.ch#/members/all/:member/view/' + column.meta" target="_blank">
-									{{ column.label }}
+								{{ column.label }}
+								<a :href="'https://' + domain + '.webling.ch#/members/all/:member/view/' + column.meta" target="_blank" class="is-size-7">
+									<b-icon pack="fa" icon="external-link-alt" />
 								</a>
 							</template>
 							<span v-if="props.row.type === 'parents'">
@@ -114,7 +118,7 @@
 </template>
 
 <script lang="ts">
-import { computed, createComponent, ref } from '@vue/composition-api';
+import { computed, createComponent, Ref, ref } from '@vue/composition-api';
 import { useAggregator } from '@/lib/aggregator';
 import { IDefinitionProperty, useDefinitions } from '@/lib/definitions';
 import { Formatter } from '@/lib/formatter';
@@ -218,6 +222,7 @@ export default createComponent({
 		const memberProperties = getDefinition('member').properties;
 		const aggregated = Array.from(getAggregated());
 		const isMerging = ref(false);
+		const mergeError: Ref<string | null> = ref(null);
 
 		const rows: IRowDefinition[] = memberProperties.map(property => ({
 			type: 'property',
@@ -242,6 +247,7 @@ export default createComponent({
 
 		const merge = async () => {
 			isMerging.value = true;
+			mergeError.value = null;
 
 			const members = mergable.value.members;
 			const models = mergable.value.models;
@@ -273,11 +279,13 @@ export default createComponent({
 			});
 
 			if (!rows.filter(row => row.type === 'parents')[0].disabled) {
-				members.map(instance => {
-					if (Array.isArray(instance.parents)) {
+				members.map((instance, pos) => {
+					if (pos > 0 && Array.isArray(instance.parents)) {
 						parents.push(...instance.parents.filter(parentId => models.connections[parentId]));
 					}
 				});
+			} else {
+				parents.push(...members[0].parents!);
 			}
 
 			if (!rows.filter(row => row.type === 'debitors')[0].disabled) {
@@ -288,23 +296,32 @@ export default createComponent({
 				});
 			}
 
-			const mergedIds = members.filter((_, index) => index > 0).map(member => member.id);
+			const mergedIds = members.filter((_, pos) => pos > 0).map(member => member.id);
 			await postRequest('transaction', [
 				{
 					method: 'PUT',
 					url: `object/${members[0].id}`,
 					body: {
 						properties: properties,
-						parents: parents,
-						links: {
-							debitor: debitors
-						}
+						parents: parents
 					}
-				}, {
+				},
+				...debitors.map(debitorId => ({
+					method: 'PUT',
+					url: `object/${debitorId}`,
+					body: [{
+						links: {
+							member: [members[0].id]
+						}
+					}]
+				})),
+				{
 					method: 'DELETE',
 					url: `object/${mergedIds.join(',')}`
 				}
-			]);
+			]).catch(error => {
+				mergeError.value = error.message;
+			});
 			isMerging.value = false;
 			if (index.value + 1 < aggregated.length) {
 				index.value += 1;
@@ -312,6 +329,7 @@ export default createComponent({
 		};
 
 		return {
+			mergeError,
 			domain,
 			aggregated,
 			index,
