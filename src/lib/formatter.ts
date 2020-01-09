@@ -3,8 +3,14 @@ export class Formatter {
 		switch (datatype) {
 			case 'date':
 				return Formatter.formatDate(value);
+			case 'multienum':
+				return Formatter.formatEnum(value);
 			default:
-				return value;
+				if (value === null) {
+					return '';
+				} else {
+					return String(value);
+				}
 		}
 	}
 
@@ -20,8 +26,20 @@ export class Formatter {
 			return Formatter.twoDigits(value.getDate()) + '.' +
 				Formatter.twoDigits(value.getMonth() + 1) + '.' +
 				Formatter.twoDigits(value.getFullYear());
-		} else {
+		} else if (value === null) {
 			return '';
+		} else {
+			return String(value);
+		}
+	}
+
+	public static formatEnum(value: unknown): string {
+		if (Array.isArray(value)) {
+			return value.join(', ');
+		} else if (value === null) {
+			return '';
+		} else {
+			return String(value);
 		}
 	}
 

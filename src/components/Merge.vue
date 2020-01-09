@@ -28,24 +28,30 @@
 				<b-message v-if="mergeError !== null" type="is-danger">
 					{{ mergeError }}
 				</b-message>
+				<b-message v-if="merged[index]" type="is-info">
+					Das Mitglied {{ mergable.members[0].label }} wurde schon zusammengeführt.
+				</b-message>
 				<b-table
+					v-else
 					:data="rows"
 					:bordered="true"
 					:striped="true"
 					:narrowed="true"
 					:hoverable="true"
 					:loading="false"
+					class="is-responsive"
+					style="overflow-x: auto"
 				>
 					<template slot-scope="props">
 						<b-table-column label="Feld" :class="{ 'is-size-7': props.row.disabled }">
 							{{ props.row.name }}
 						</b-table-column>
-						<b-table-column v-for="(member, key) in mergable.members" :key="member.id" :meta="member.id" :label="member.label"
+						<b-table-column v-for="(member, key) in mergable.members" :key="member.id" :meta="{id: member.id, label: member.label }" :label="member.label + '(' + key + ')'"
 							:class="{ 'is-size-7': props.row.disabled }"
 						>
 							<template slot="header" slot-scope="{ column }">
-								{{ column.label }}
-								<a :href="'https://' + domain + '.webling.ch#/members/all/:member/view/' + column.meta" target="_blank" class="is-size-7">
+								{{ column.meta.label }}
+								<a :href="'https://' + domain + '.webling.ch#/members/all/:member/view/' + column.meta.id" target="_blank" class="is-size-7">
 									<b-icon pack="fa" icon="external-link-alt" />
 								</a>
 							</template>
@@ -118,7 +124,7 @@
 </template>
 
 <script lang="ts">
-import { computed, createComponent, Ref, ref } from '@vue/composition-api';
+import { computed, createComponent, reactive, Ref, ref } from '@vue/composition-api';
 import { useAggregator } from '@/lib/aggregator';
 import { IDefinitionProperty, useDefinitions } from '@/lib/definitions';
 import { Formatter } from '@/lib/formatter';
@@ -160,10 +166,9 @@ function getMergable(rows: IRowDefinition[], instances: IInstance[], memberPrope
 
 	memberProperties.forEach(property => {
 		const firstValue = Formatter.format(instances[0].properties[property.title], property.datatype);
-		if (instances.every(instance => Formatter.format(instance.properties[property.title], property.datatype) === firstValue)) {
-			models.properties[property.title] = null;
-			rows.filter(row => row.id === property.id)[0].disabled = true;
-		} else {
+		const propertyDisabled = instances.every(instance => Formatter.format(instance.properties[property.title], property.datatype) === firstValue);
+		rows.filter(row => row.id === property.id)[0].disabled = propertyDisabled;
+		if (!propertyDisabled) {
 			const notNull = instances
 				.map((instance, key) => instance.properties[property.title] === null ? null : key)
 				.filter(value => value !== null);
@@ -223,6 +228,7 @@ export default createComponent({
 		const aggregated = Array.from(getAggregated());
 		const isMerging = ref(false);
 		const mergeError: Ref<string | null> = ref(null);
+		const merged = reactive(Array.from({ length: aggregated.length }).map(() => false));
 
 		const rows: IRowDefinition[] = memberProperties.map(property => ({
 			type: 'property',
@@ -311,6 +317,7 @@ export default createComponent({
 			])
 				.then(() => deleteRequest(`object/${mergedIds.join(',')}`))
 				.catch(error => { mergeError.value = error.message; });
+			merged[index.value] = true;
 			isMerging.value = false;
 			if (index.value + 1 < aggregated.length) {
 				index.value += 1;
@@ -325,6 +332,7 @@ export default createComponent({
 			mergable,
 			rows,
 			isMerging,
+			merged,
 			format: Formatter.format,
 			merge,
 			logout: () => {

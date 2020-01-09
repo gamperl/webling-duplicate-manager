@@ -42,11 +42,13 @@ export class Aggregator {
 		});
 		const aggregated: Map<string, IInstance[]> = new Map();
 		instances.forEach(instance => {
-			const key: string = propertyGetters.map(fn => fn(instance)).join('<#>');
-			if (aggregated.has(key)) {
-				aggregated.get(key)!.push(instance);
-			} else {
-				aggregated.set(key, [instance]);
+			if (propertyGetters.some(fn => fn(instance) !== '')) {
+				const key: string = propertyGetters.map(fn => fn(instance)).join('<#>');
+				if (aggregated.has(key)) {
+					aggregated.get(key)!.push(instance);
+				} else {
+					aggregated.set(key, [instance]);
+				}
 			}
 		});
 		aggregated.forEach(values => {
