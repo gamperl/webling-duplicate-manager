@@ -8,7 +8,7 @@ export interface IInstanceBase {
 	type: string;
 	readonly: boolean;
 	label: string;
-	metadata: { [key: string]: any };
+	meta: { [key: string]: any };
 	children: { [childType: string]: number[] };
 	links: { [linkCategory: string]: number[] };
 	parents: number[] | null;
@@ -119,7 +119,11 @@ export class Instances {
 		instance.type = rawInstance.type;
 		instance.label = '';
 		instance.readonly = rawInstance.readonly;
-		instance.metadata = rawInstance.metadata;
+		instance.meta = {
+			created: this.convertTimestamp(rawInstance.meta.created),
+			lastmodified: this.convertTimestamp(rawInstance.meta.lastmodified),
+			...instance.meta
+		};
 		instance.properties = {};
 		instance.parents = rawInstance.parents;
 		instance.children = rawInstance.children;
@@ -223,7 +227,7 @@ export class Instances {
 				type: '',
 				readonly: true,
 				label: '',
-				metadata: {},
+				meta: {},
 				properties: {},
 				children: {},
 				links: {},

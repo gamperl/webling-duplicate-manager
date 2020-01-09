@@ -46,7 +46,7 @@
 						<b-table-column label="Feld" :class="{ 'is-size-7': props.row.disabled }">
 							{{ props.row.name }}
 						</b-table-column>
-						<b-table-column v-for="(member, key) in mergable.members" :key="member.id" :meta="{id: member.id, label: member.label }" :label="member.label + '(' + key + ')'"
+						<b-table-column v-for="(member, key) in mergable.members" :key="member.id" :meta="{id: member.id, label: member.label, created: member.meta.created }" :label="member.label + '(' + key + ')'"
 							:class="{ 'is-size-7': props.row.disabled }"
 						>
 							<template slot="header" slot-scope="{ column }">
@@ -54,6 +54,8 @@
 								<a :href="'https://' + domain + '.webling.ch#/members/all/:member/view/' + column.meta.id" target="_blank" class="is-size-7">
 									<b-icon pack="fa" icon="external-link-alt" />
 								</a>
+								<br>
+								<span class="is-size-7">Erstellt am {{ format(column.meta.created, 'timestamp') }}</span>
 							</template>
 							<span v-if="props.row.type === 'parents'">
 								<span v-if="props.row.disabled">
@@ -141,7 +143,8 @@ interface IMergableModels {
 interface IMergable {
 	models: IMergableModels;
 	members: {
-		id: number,
+		id: number;
+		meta: { [key: string]: any };
 		label: string;
 		properties: { [propertyName: string]: any };
 		links: { [linkCategory: string]: number[] };
@@ -205,6 +208,7 @@ function getMergable(rows: IRowDefinition[], instances: IInstance[], memberPrope
 		models,
 		members: instances.map(member => ({
 			id: member.id,
+			meta: member.meta,
 			label: member.label,
 			properties: member.properties,
 			parents: member.parents,

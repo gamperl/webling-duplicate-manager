@@ -34,7 +34,6 @@ export default createComponent({
 					break;
 				case 'debitor':
 					label.value = `${instance.label} ${instance.properties.state}`;
-
 					href.value = `https://${domain.value}.webling.ch#/accounting/${instance.parents![0]}/debitor/:debitor/view/${instance.id}`;
 					break;
 				default:

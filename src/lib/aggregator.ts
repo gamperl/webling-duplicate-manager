@@ -46,6 +46,9 @@ export class Aggregator {
 				const key: string = propertyGetters.map(fn => fn(instance)).join('<#>');
 				if (aggregated.has(key)) {
 					aggregated.get(key)!.push(instance);
+					aggregated.get(key)!.sort(
+						(instance1, instance2) => instance1.meta.created.getTime() - instance2.meta.created.getTime()
+					);
 				} else {
 					aggregated.set(key, [instance]);
 				}
