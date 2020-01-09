@@ -48,13 +48,13 @@
 							<span v-if="props.row.type === 'parents'">
 								<span v-if="props.row.disabled">
 									<div v-for="parentId in member.parents" :key="parentId">
-										{{ parentId }}
+										<Label :id="parentId" />
 									</div>
 								</span>
 								<span v-else-if="member.parents !== null">
 									<div v-for="parentId in member.parents" :key="parentId">
 										<b-checkbox v-model="mergable.models.connections[parentId]">
-											{{ parentId }}
+											<Label :id="parentId" />
 										</b-checkbox>
 									</div>
 								</span>
@@ -62,13 +62,13 @@
 							<span v-else-if="props.row.type === 'debitors'">
 								<span v-if="props.row.disabled">
 									<div v-for="debitorId in member.links.debitor" :key="debitorId">
-										{{ debitorId }}
+										<Label :id="debitorId" />
 									</div>
 								</span>
 								<span v-else-if="member.links.debitor !== null">
 									<div v-for="debitorId in member.links.debitor" :key="debitorId">
 										<b-checkbox v-model="mergable.models.connections[debitorId]">
-											{{ debitorId }}
+											<Label :id="debitorId" />
 										</b-checkbox>
 									</div>
 								</span>
@@ -93,18 +93,19 @@
 </template>
 
 <script lang="ts">
-import { computed, createComponent, reactive, Ref, ref, watch } from '@vue/composition-api';
+import { computed, createComponent, ref } from '@vue/composition-api';
 import { useAggregator } from '@/lib/aggregator';
 import { IDefinitionProperty, useDefinitions } from '@/lib/definitions';
 import { Formatter } from '@/lib/formatter';
 import { useStorage } from '@/lib/storage';
 import { IInstance } from '@/lib/instances';
 import { useHttp } from '@/lib/http';
+import Label from '@/components/Label.vue';
 
 interface IMergableModels {
 	properties: { [key: string]: any };
 	connections: { [id: number]: boolean };
-};
+}
 
 interface IMergable {
 	models: IMergableModels;
@@ -169,8 +170,6 @@ function getMergable(rows: IRowDefinition[], instances: IInstance[], memberPrope
 		});
 	}
 
-	// add debitors
-
 	return {
 		models,
 		members: instances.map(member => ({
@@ -184,6 +183,9 @@ function getMergable(rows: IRowDefinition[], instances: IInstance[], memberPrope
 }
 
 export default createComponent({
+	components: {
+		Label
+	},
 	setup() {
 		const { getAggregated } = useAggregator();
 		const { getDefinition } = useDefinitions();
