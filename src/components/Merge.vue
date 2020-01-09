@@ -25,7 +25,7 @@
 
 		<section class="section">
 			<div class="container">
-				<b-message v-if="error !== null" type="is-danger">
+				<b-message v-if="mergeError !== null" type="is-danger">
 					{{ mergeError }}
 				</b-message>
 				<b-table
@@ -216,7 +216,7 @@ export default createComponent({
 		const { getAggregated } = useAggregator();
 		const { getDefinition } = useDefinitions();
 		const { clearItems } = useStorage();
-		const { domain, postRequest } = useHttp();
+		const { domain, putRequest, deleteRequest } = useHttp();
 
 		const index = ref(0);
 		const memberProperties = getDefinition('member').properties;
@@ -279,8 +279,8 @@ export default createComponent({
 			});
 
 			if (!rows.filter(row => row.type === 'parents')[0].disabled) {
-				members.map((instance, pos) => {
-					if (pos > 0 && Array.isArray(instance.parents)) {
+				members.map((instance) => {
+					if (Array.isArray(instance.parents)) {
 						parents.push(...instance.parents.filter(parentId => models.connections[parentId]));
 					}
 				});
@@ -289,39 +289,28 @@ export default createComponent({
 			}
 
 			if (!rows.filter(row => row.type === 'debitors')[0].disabled) {
-				members.map(instance => {
-					if (Array.isArray(instance.links.debitor)) {
+				members.map((instance, pos) => {
+					if (pos > 0 && Array.isArray(instance.links.debitor)) {
 						debitors.push(...instance.links.debitor.filter(debitorId => models.connections[debitorId]));
 					}
 				});
 			}
 
 			const mergedIds = members.filter((_, pos) => pos > 0).map(member => member.id);
-			await postRequest('transaction', [
+			await putRequest('object', [
 				{
-					method: 'PUT',
-					url: `object/${members[0].id}`,
-					body: {
-						properties: properties,
-						parents: parents
+					id: members[0].id,
+					properties: properties,
+					parents: parents
+				}, ...debitors.map(debitorId => ({
+					id: debitorId,
+					links: {
+						member: [members[0].id]
 					}
-				},
-				...debitors.map(debitorId => ({
-					method: 'PUT',
-					url: `object/${debitorId}`,
-					body: [{
-						links: {
-							member: [members[0].id]
-						}
-					}]
-				})),
-				{
-					method: 'DELETE',
-					url: `object/${mergedIds.join(',')}`
-				}
-			]).catch(error => {
-				mergeError.value = error.message;
-			});
+				}))
+			])
+				.then(() => deleteRequest(`object/${mergedIds.join(',')}`))
+				.catch(error => { mergeError.value = error.message; });
 			isMerging.value = false;
 			if (index.value + 1 < aggregated.length) {
 				index.value += 1;
