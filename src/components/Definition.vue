@@ -52,15 +52,16 @@ export default createComponent({
 		const { getRequest } = useHttp();
 		const { getDefinition } = useDefinitions();
 		const { aggregate } = useAggregator();
-		const { clearItems } = useStorage();
+		const { clearItems, getItem, setItem } = useStorage();
 
 		const definitions = getDefinition('member');
 		const comparable = ref<typeof definitions.properties>([]);
 		const filteredProperties = ref<any>(definitions.properties);
 		const isLoading = ref(false);
 
-		// TODO: save comparable in storage
-		// TODO: if no comparable provided, use first and lastname
+		if (Array.isArray(getItem('properties', null))) {
+			comparable.value = definitions.properties.filter(property => getItem('properties', []).indexOf(property.id) > -1);
+		}
 
 		return {
 			comparable,
@@ -74,6 +75,7 @@ export default createComponent({
 			submit: async () => {
 				isLoading.value = true;
 				const propertyIds = comparable.value.map(property => property.id);
+				setItem('properties', propertyIds);
 				const response = await getRequest('member');
 				await aggregate(response.objects, 'member', propertyIds);
 			},
