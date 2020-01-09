@@ -87,6 +87,27 @@
 						</b-table-column>
 					</template>
 				</b-table>
+				<div class="columns is-centered">
+					<div class="column is-narrow">
+						<div class="box is-shadowless">
+							<div class="columns is-mobile">
+								<div class="column">
+									<b-button @click="index -= 1" v-if="index > 0 && !isMerging" class="is-8">
+										<b-icon pack="fa" icon="chevron-left" />
+									</b-button>
+								</div>
+								<div class="column">
+									<b-button type="is-primary" @click="merge" :disabled="isMerging">Merge</b-button>
+								</div>
+								<div class="column">
+									<b-button @click="index += 1" v-if="index + 1 < aggregated.length && !isMerging">
+										<b-icon pack="fa" icon="chevron-right" />
+									</b-button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
 		</section>
 	</span>
@@ -110,6 +131,7 @@ interface IMergableModels {
 interface IMergable {
 	models: IMergableModels;
 	members: {
+		id: number,
 		label: string;
 		properties: { [propertyName: string]: any };
 		links: { [linkCategory: string]: number[] };
@@ -190,11 +212,12 @@ export default createComponent({
 		const { getAggregated } = useAggregator();
 		const { getDefinition } = useDefinitions();
 		const { clearItems } = useStorage();
-		const { domain } = useHttp();
+		const { domain, postRequest } = useHttp();
 
 		const index = ref(0);
 		const memberProperties = getDefinition('member').properties;
 		const aggregated = Array.from(getAggregated());
+		const isMerging = ref(false);
 
 		const rows: IRowDefinition[] = memberProperties.map(property => ({
 			type: 'property',
@@ -217,13 +240,86 @@ export default createComponent({
 
 		const mergable = computed(() => getMergable(rows, aggregated[index.value], memberProperties));
 
+		const merge = async () => {
+			isMerging.value = true;
+
+			const members = mergable.value.members;
+			const models = mergable.value.models;
+
+			const properties: { [id: number]: any } = {};
+			const parents: number[] = [];
+			const debitors: number[] = [];
+
+			memberProperties.forEach(property => {
+				if (!rows.filter(row => row.id === property.id)[0].disabled && models.properties[property.title] !== 0) {
+					const value = members[models.properties[property.title]].properties[property.title];
+					const d2 = Formatter.twoDigits;
+					switch (property.datatype) {
+						// if the property is a date property, and the value a date object, convert it to string
+						case 'date':
+							properties[property.id] = `${value.getFullYear()}-${d2(value.getMonth() + 1)}-${d2(value.getDate())}`;
+							break;
+
+						// if the property is a timestamp property, and the value a date object, convert it to string
+						case 'timestamp':
+							properties[property.id] = `${value.getFullYear()}-${d2(value.getMonth() + 1)}-${d2(value.getDate())}` +
+								` ${d2(value.getHours())}:${d2(value.getMinutes())}:${d2(value.getSeconds())}`;
+							break;
+
+						default:
+							properties[property.id] = value;
+					}
+				}
+			});
+
+			if (!rows.filter(row => row.type === 'parents')[0].disabled) {
+				members.map(instance => {
+					if (Array.isArray(instance.parents)) {
+						parents.push(...instance.parents.filter(parentId => models.connections[parentId]));
+					}
+				});
+			}
+
+			if (!rows.filter(row => row.type === 'debitors')[0].disabled) {
+				members.map(instance => {
+					if (Array.isArray(instance.links.debitor)) {
+						debitors.push(...instance.links.debitor.filter(debitorId => models.connections[debitorId]));
+					}
+				});
+			}
+
+			const mergedIds = members.filter((_, index) => index > 0).map(member => member.id);
+			await postRequest('transaction', [
+				{
+					method: 'PUT',
+					url: `object/${members[0].id}`,
+					body: {
+						properties: properties,
+						parents: parents,
+						links: {
+							debitor: debitors
+						}
+					}
+				}, {
+					method: 'DELETE',
+					url: `object/${mergedIds.join(',')}`
+				}
+			]);
+			isMerging.value = false;
+			if (index.value + 1 < aggregated.length) {
+				index.value += 1;
+			}
+		};
+
 		return {
 			domain,
 			aggregated,
 			index,
 			mergable,
 			rows,
+			isMerging,
 			format: Formatter.format,
+			merge,
 			logout: () => {
 				clearItems();
 				location.reload();
