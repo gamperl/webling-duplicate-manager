@@ -1,5 +1,18 @@
 import { inject, InjectionKey, provide, reactive } from '@vue/composition-api';
 
+export interface IDefinitionProperty {
+	title: string;
+	datatype: string;
+	type: string|null;
+	id: number;
+	values?: {
+		id: number;
+		value: string;
+		color: string;
+	}[] | null;
+	default: any;
+}
+
 export interface IDefinition {
 	ready: boolean;
 	loaded: Promise<void> | null;
@@ -13,18 +26,7 @@ export interface IDefinition {
 		title: string;
 		properties: number[];
 	}[];
-	properties: {
-		title: string;
-		datatype: string;
-		type: string|null;
-		id: number;
-		values?: {
-			id: number;
-			value: string;
-			color: string;
-		}[] | null;
-		default: any;
-	}[];
+	properties: IDefinitionProperty[];
 }
 
 export class Definitions {
