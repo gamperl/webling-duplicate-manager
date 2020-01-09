@@ -109,7 +109,7 @@
 									</b-button>
 								</div>
 								<div class="column">
-									<b-button type="is-primary" @click="merge" :disabled="isMerging">Merge</b-button>
+									<b-button type="is-primary" @click="merge" :disabled="isMerging">Zusammenführen</b-button>
 								</div>
 								<div class="column">
 									<b-button @click="index += 1" v-if="index + 1 < aggregated.length && !isMerging">
