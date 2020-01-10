@@ -47,7 +47,11 @@ export class Aggregator {
 				if (aggregated.has(key)) {
 					aggregated.get(key)!.push(instance);
 					aggregated.get(key)!.sort(
-						(instance1, instance2) => instance1.meta.created.getTime() - instance2.meta.created.getTime()
+						(instance1, instance2) => {
+							const time1 = instance1.meta.created instanceof Date ? instance1.meta.created.getTime() : 0;
+							const time2 = instance2.meta.created instanceof Date ? instance2.meta.created.getTime() : 0;
+							return time1 - time2;
+						}
 					);
 				} else {
 					aggregated.set(key, [instance]);
